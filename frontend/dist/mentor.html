@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mentor 管理入口</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="mentor-page">
+      <div class="mentor-access-layout" id="mentorAccessLayout">
+        <section class="mentor-shell locked" id="mentorShell" aria-hidden="true">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Mentor Desk</p>
+              <h1>实习生信息管理</h1>
+            </div>
+            <div class="topbar-actions">
+              <a class="secondary-button link-button" href="./index.html">返回入口</a>
+              <button class="icon-button" id="exportBtn" type="button" title="导出数据" aria-label="导出数据">
+                <span aria-hidden="true">↓</span>
+              </button>
+              <button class="icon-button danger" id="resetBtn" type="button" title="清空演示数据" aria-label="清空演示数据" style="display: none;">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+          </header>
+
+          <section class="metrics" aria-label="概览指标">
+            <article>
+              <span>总人数</span>
+              <strong id="totalCount">0</strong>
+            </article>
+            <article>
+              <span>已确认</span>
+              <strong id="approvedCount">0</strong>
+            </article>
+            <article>
+              <span>已打回</span>
+              <strong id="rejectedCount">0</strong>
+            </article>
+            <article>
+              <span>部门数</span>
+              <strong id="departmentCount">0</strong>
+            </article>
+          </section>
+
+          <div class="mentor-layout">
+            <section class="mentor-panel" aria-labelledby="tableTitle">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">All Records</p>
+                  <h2 id="tableTitle">全部实习生信息</h2>
+                </div>
+                <div class="segmented-control" aria-label="状态筛选">
+                  <button type="button" class="segment active" data-filter="all">全部</button>
+                  <button type="button" class="segment" data-filter="pending">待处理</button>
+                  <button type="button" class="segment" data-filter="approved">已确认</button>
+                </div>
+              </div>
+
+              <div class="table-tools">
+                <label class="search-box">
+                  <span aria-hidden="true">⌕</span>
+                  <input id="searchInput" type="search" placeholder="搜索姓名、部门、学校、导师" />
+                </label>
+                <select id="campusFilter" aria-label="按园区筛选">
+                  <option value="all">全部园区</option>
+                </select>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>姓名 / 身份证</th>
+                      <th>性别</th>
+                      <th>手机号</th>
+                      <th>学校 / 年级</th>
+                      <th>实习时间</th>
+                      <th>部门 / 园区</th>
+                      <th>导师</th>
+                      <th>门禁状态</th>
+                      <th>网络状态</th>
+                      <th>表单状态</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="internTableBody"></tbody>
+                </table>
+                <div class="empty-state" id="emptyState" hidden>
+                  <strong>暂无匹配记录</strong>
+                  <span>实习生提交信息后会显示在这里。</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="mentor-editor" id="mentorEditor" aria-labelledby="editorTitle" hidden>
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Edit Record</p>
+                  <h2 id="editorTitle">编辑实习生信息</h2>
+                </div>
+              </div>
+
+              <form id="mentorForm" class="intern-form">
+                <input name="id" type="hidden" />
+
+                <div class="field-grid dense">
+                  <label>
+                    <span>姓名</span>
+                    <input name="name" type="text" required />
+                  </label>
+
+                  <label>
+                    <span>手机号</span>
+                    <input name="phone" type="tel" inputmode="numeric" required />
+                  </label>
+
+                  <label>
+                    <span>身份证号</span>
+                    <input name="idNumber" type="text" required />
+                  </label>
+
+                  <label>
+                    <span>年级</span>
+                    <select name="grade" required>
+                      <option>大一</option>
+                      <option>大二</option>
+                      <option>大三</option>
+                      <option>大四</option>
+                      <option>研一</option>
+                      <option>研二</option>
+                      <option>研三</option>
+                      <option>博士</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>性别</span>
+                    <select name="gender" required>
+                      <option>男</option>
+                      <option>女</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>紧急联系人手机号</span>
+                    <input name="emergencyPhone" type="tel" inputmode="numeric" required />
+                  </label>
+
+                  <label>
+                    <span>就读学校</span>
+                    <input name="school" type="text" required />
+                  </label>
+
+                  <label>
+                    <span>实习开始时间</span>
+                    <input name="startDate" type="date" required />
+                  </label>
+
+                  <label>
+                    <span>实习结束时间</span>
+                    <input name="endDate" type="date" required />
+                  </label>
+
+                  <label>
+                    <span>实习部门</span>
+                    <input name="department" type="text" required />
+                  </label>
+
+                  <label>
+                    <span>工位园区</span>
+                    <select name="campus" required>
+                      <option>中关村壹号</option>
+                      <option>环保园</option>
+                      <option>松江</option>
+                      <option>线上</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>导师</span>
+                    <input name="mentor" type="text" required />
+                  </label>
+
+                  <label>
+                    <span>表单状态</span>
+                    <select name="status" required>
+                      <option value="pending">待处理</option>
+                      <option value="approved">已确认</option>
+                    </select>
+                  </label>
+
+                <label>
+                  <span>门禁状态</span>
+                  <select name="accessStatus" required>
+                    <option value="unopened">未开通</option>
+                    <option value="opened">已开通</option>
+                    <option value="disabled">不开通</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>网络状态</span>
+                  <select name="networkStatus" required>
+                    <option value="unopened">未开通</option>
+                    <option value="opened">已开通</option>
+                    <option value="disabled">不开通</option>
+                  </select>
+                </label>
+
+                  <label class="wide">
+                    <span>备注</span>
+                    <textarea name="note" rows="3"></textarea>
+                  </label>
+                </div>
+
+                <div class="form-actions">
+                  <button class="secondary-button" id="cancelMentorEditBtn" type="button">取消</button>
+                  <button class="primary-button" type="submit">保存修改</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <aside class="auth-inline-shell" id="authShell">
+          <div class="auth-card compact-auth-card">
+            <p class="eyebrow">Mentor Access</p>
+            <h2 id="mentorAuthTitle">Token 验证</h2>
+            <p class="auth-copy">输入 token 后进入管理页面。</p>
+
+            <form id="tokenForm" class="token-form compact-token-form">
+              <label class="token-inline-field">
+                <span>访问 Token</span>
+                <input id="mentorToken" name="mentorToken" type="password" required placeholder="请输入 token" />
+              </label>
+              <button class="primary-button" type="submit">验证</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.config.js"></script>
+    <script src="./src/shared.js"></script>
+    <script src="./src/mentor.js"></script>
+  </body>
+</html>

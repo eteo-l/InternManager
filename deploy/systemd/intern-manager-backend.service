@@ -1,0 +1,17 @@
+[Unit]
+Description=Intern Manager Backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+Environment=SPRING_PROFILES_ACTIVE=prod
+WorkingDirectory=/opt/intern-manager/backend
+ExecStart=/usr/bin/java -jar /opt/intern-manager/backend/intern-manager-backend.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

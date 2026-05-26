@@ -1,0 +1,23 @@
+server:
+  address: 127.0.0.1
+  port: 8080
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: false
+        same-site: Lax
+
+app:
+  storage:
+    db-path: "data/intern-manager.db"
+    legacy-csv-path: "data/intern-records.csv"
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"
+      - "http://127.0.0.1:5173"
+
+spring:
+  jackson:
+    time-zone: Asia/Shanghai

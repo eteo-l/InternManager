@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>实习生信息提交</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="intern-page">
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Intern Self Service</p>
+          <h1>提交实习信息</h1>
+          <p>
+            请填写完整的个人实习信息。提交后将由 Mentor 在管理端进行确认、门禁确认和网络状态确认。
+          </p>
+        </div>
+
+        <div class="hero-points">
+          <article>
+            <strong>基础信息</strong>
+            <span>姓名、性别、手机号、身份证号、学校和年级</span>
+          </article>
+          <article>
+            <strong>实习安排</strong>
+            <span>开始时间、结束时间、部门、园区和导师</span>
+          </article>
+          <article>
+            <strong>紧急联系</strong>
+            <span>紧急联系人手机号和补充备注</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="intern-form-shell">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Intern Form</p>
+            <h2>个人信息表</h2>
+          </div>
+          <a class="inline-link" href="./index.html">返回入口</a>
+        </div>
+
+        <form id="internForm" class="intern-form">
+          <div class="field-grid intern-grid">
+            <label>
+              <span>姓名</span>
+              <input name="name" type="text" autocomplete="name" required placeholder="请输入姓名" />
+            </label>
+
+            <label>
+              <span>手机号</span>
+              <input name="phone" type="tel" inputmode="numeric" required placeholder="11 位手机号" />
+            </label>
+
+            <label>
+              <span>身份证号</span>
+              <input name="idNumber" type="text" required placeholder="请输入身份证号" />
+            </label>
+
+            <label>
+              <span>年级</span>
+              <select name="grade" required>
+                <option value="">请选择年级</option>
+                <option>大一</option>
+                <option>大二</option>
+                <option>大三</option>
+                <option>大四</option>
+                <option>研一</option>
+                <option>研二</option>
+                <option>研三</option>
+                <option>博士</option>
+              </select>
+            </label>
+
+            <label>
+              <span>性别</span>
+              <select name="gender" required>
+                <option value="">请选择性别</option>
+                <option>男</option>
+                <option>女</option>
+              </select>
+            </label>
+
+            <label>
+              <span>紧急联系人手机号</span>
+              <input name="emergencyPhone" type="tel" inputmode="numeric" required placeholder="11 位手机号" />
+            </label>
+
+            <label>
+              <span>就读学校</span>
+              <input name="school" type="text" required placeholder="请输入学校" />
+            </label>
+
+            <label>
+              <span>实习开始时间</span>
+              <input name="startDate" type="date" required />
+            </label>
+
+            <label>
+              <span>实习结束时间</span>
+              <input name="endDate" type="date" required />
+            </label>
+
+            <label>
+              <span>实习部门</span>
+              <input name="department" type="text" required placeholder="极光实验室" />
+            </label>
+
+            <label>
+              <span>工位园区</span>
+              <select name="campus" required>
+                <option value="">请选择园区</option>
+                <option>中关村壹号</option>
+                <option>环保园</option>
+                <option>松江</option>
+                <option>线上</option>
+              </select>
+            </label>
+
+            <label>
+              <span>导师</span>
+              <input name="mentor" type="text" required placeholder="请输入导师姓名" />
+            </label>
+
+            <label class="wide">
+              <span>备注</span>
+              <textarea name="note" rows="4"></textarea>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="secondary-button" id="clearInternFormBtn" type="button">清空</button>
+            <button class="primary-button" type="submit">提交信息</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.config.js"></script>
+    <script src="./src/shared.js"></script>
+    <script src="./src/intern.js"></script>
+  </body>
+</html>

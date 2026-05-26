@@ -1,0 +1,18 @@
+{
+  "name": "intern-manager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "实习生管理系统前端页面",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "intern",
+    "manager",
+    "frontend"
+  ],
+  "author": "",
+  "license": "MIT"
+}
