@@ -486,6 +486,7 @@ textarea:focus {
 .search-box {
   flex: 1;
   position: relative;
+  min-width: 0;
 }
 
 .search-box span {
@@ -501,6 +502,7 @@ textarea:focus {
   padding-left: 38px;
 }
 
+#mentorFilter,
 #campusFilter {
   max-width: 160px;
 }
@@ -705,6 +707,7 @@ tbody tr.record-left:hover {
     align-items: center;
   }
 
+  #mentorFilter,
   #campusFilter {
     max-width: none;
   }

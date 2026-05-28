@@ -11,6 +11,7 @@ const mentorEditor = document.querySelector("#mentorEditor");
 const tableBody = document.querySelector("#internTableBody");
 const emptyState = document.querySelector("#emptyState");
 const searchInput = document.querySelector("#searchInput");
+const mentorFilter = document.querySelector("#mentorFilter");
 const campusFilter = document.querySelector("#campusFilter");
 const exportBtn = document.querySelector("#exportBtn");
 const resetBtn = document.querySelector("#resetBtn");
@@ -19,6 +20,10 @@ const showToast = createToast();
 
 function isLeftEmploymentStatus(status) {
   return status === "left";
+}
+
+function normalizeMentorName(value) {
+  return String(value || "").trim();
 }
 
 function formatTaskTracking(value) {
@@ -91,6 +96,21 @@ function renderMetrics() {
   document.querySelector("#departmentCount").textContent = departments;
 }
 
+function renderMentorFilter() {
+  const selected = mentorFilter.value;
+  const mentors = [...new Set(records.map((record) => normalizeMentorName(record.mentor)).filter(Boolean))].sort((left, right) => left.localeCompare(right, "zh-Hans-CN"));
+
+  mentorFilter.innerHTML = '<option value="all">全部导师</option>';
+  mentors.forEach((mentor) => {
+    const option = document.createElement("option");
+    option.value = mentor;
+    option.textContent = mentor;
+    mentorFilter.append(option);
+  });
+
+  mentorFilter.value = mentors.includes(selected) ? selected : "all";
+}
+
 function renderCampusFilter() {
   const selected = campusFilter.value;
   const campuses = [...new Set(records.map((record) => record.campus).filter(Boolean))];
@@ -108,11 +128,13 @@ function renderCampusFilter() {
 
 function getFilteredRecords() {
   const keyword = searchInput.value.trim().toLowerCase();
+  const mentor = mentorFilter.value;
   const campus = campusFilter.value;
 
   return records
     .filter((record) => {
       const matchesStatus = activeFilter === "all" || record.status === activeFilter;
+      const matchesMentor = mentor === "all" || normalizeMentorName(record.mentor) === mentor;
       const matchesCampus = campus === "all" || record.campus === campus;
       const searchableText = [
         record.name,
@@ -131,7 +153,7 @@ function getFilteredRecords() {
         .join(" ")
         .toLowerCase();
 
-      return matchesStatus && matchesCampus && searchableText.includes(keyword);
+      return matchesStatus && matchesMentor && matchesCampus && searchableText.includes(keyword);
     })
     .map((record, index) => ({ record, index }))
     .sort((left, right) => {
@@ -200,6 +222,7 @@ function renderTable() {
 
 function render() {
   renderMetrics();
+  renderMentorFilter();
   renderCampusFilter();
   renderTable();
 }
@@ -330,6 +353,7 @@ tokenForm.addEventListener("submit", handleTokenSubmit);
 mentorForm.addEventListener("submit", saveMentorRecord);
 cancelMentorEditBtn.addEventListener("click", resetMentorForm);
 searchInput.addEventListener("input", renderTable);
+mentorFilter.addEventListener("change", renderTable);
 campusFilter.addEventListener("change", renderTable);
 exportBtn.addEventListener("click", exportRecords);
 resetBtn.addEventListener("click", resetAllRecords);
