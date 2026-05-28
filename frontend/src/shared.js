@@ -39,6 +39,11 @@ const resourceStatusLabels = {
   rejected: "不开通"
 };
 
+const employmentStatusLabels = {
+  active: "在职",
+  left: "已离职"
+};
+
 function getInternFormData(form) {
   return internFields.reduce((data, field) => {
     const element = form.elements[field];
@@ -93,6 +98,10 @@ function getFormStatusLabel(status) {
 
 function getResourceStatusLabel(status) {
   return resourceStatusLabels[status] || resourceStatusLabels.pending;
+}
+
+function getEmploymentStatusLabel(status) {
+  return employmentStatusLabels[status] || employmentStatusLabels.active;
 }
 
 function createToast() {

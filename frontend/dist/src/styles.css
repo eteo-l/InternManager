@@ -512,7 +512,7 @@ textarea:focus {
 
 table {
   width: 100%;
-  min-width: 1080px;
+  min-width: 1160px;
   border-collapse: collapse;
 }
 
@@ -536,6 +536,14 @@ th {
 
 tbody tr:hover {
   background: rgba(39, 137, 149, 0.08);
+}
+
+tbody tr.record-left {
+  background: rgba(201, 79, 55, 0.08);
+}
+
+tbody tr.record-left:hover {
+  background: rgba(201, 79, 55, 0.12);
 }
 
 .person-cell strong,
@@ -577,6 +585,18 @@ tbody tr:hover {
 .badge.rejected {
   border-color: rgba(201, 79, 55, 0.28);
   background: rgba(201, 79, 55, 0.12);
+  color: #993b28;
+}
+
+.badge.employment-active {
+  border-color: rgba(21, 122, 91, 0.24);
+  background: rgba(21, 122, 91, 0.12);
+  color: var(--green-dark);
+}
+
+.badge.employment-left {
+  border-color: rgba(201, 79, 55, 0.36);
+  background: rgba(201, 79, 55, 0.2);
   color: #993b28;
 }
 

@@ -1,12 +1,13 @@
 package com.example.internmanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.internmanager.config.AppProperties;
 import com.example.internmanager.config.SqliteConfig;
+import com.example.internmanager.model.EmploymentStatus;
 import com.example.internmanager.model.FormStatus;
 import com.example.internmanager.model.InternRecord;
 import com.example.internmanager.model.ResourceStatus;
@@ -54,7 +55,7 @@ class StoragePathTest {
         String id = UUID.randomUUID().toString();
         String csv = String.join(
             "\n",
-            "id,name,grade,gender,school,startDate,endDate,department,campus,mentor,note,status,accessStatus,networkStatus,updatedAt",
+            "id,name,grade,gender,school,startDate,endDate,department,campus,employmentStatus,mentor,note,status,accessStatus,networkStatus,updatedAt",
             String.join(
                 ",",
                 List.of(
@@ -67,6 +68,7 @@ class StoragePathTest {
                     "2026-08-01",
                     "Dept A",
                     "Campus A",
+                    "left",
                     "Mentor A",
                     "Has note",
                     "pending",
@@ -97,6 +99,7 @@ class StoragePathTest {
         assertEquals("School A", record.school());
         assertEquals(LocalDate.parse("2026-05-01"), record.startDate());
         assertEquals(LocalDate.parse("2026-08-01"), record.endDate());
+        assertEquals(EmploymentStatus.LEFT, record.employmentStatus());
         assertEquals("Has note", record.note());
         assertEquals(FormStatus.PENDING, record.status());
         assertEquals(ResourceStatus.OPENED, record.accessStatus());
@@ -104,7 +107,7 @@ class StoragePathTest {
     }
 
     @Test
-    void repositoryMigratesLegacyColumnsOutOfExistingDatabase() throws Exception {
+    void repositoryMigratesExistingDatabaseWithoutEmploymentStatusColumn() throws Exception {
         Path dbPath = tempDir.resolve("db #dir").resolve("intern manager's.db");
         AppProperties properties = appProperties(dbPath, tempDir.resolve("legacy.csv"));
 
@@ -113,11 +116,8 @@ class StoragePathTest {
             CREATE TABLE intern_records (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                id_number TEXT NOT NULL,
                 grade TEXT NOT NULL,
                 gender TEXT NOT NULL,
-                emergency_phone TEXT NOT NULL,
                 school TEXT NOT NULL,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
@@ -133,18 +133,15 @@ class StoragePathTest {
             """);
         jdbcTemplate.update("""
             INSERT INTO intern_records (
-                id, name, phone, id_number, grade, gender, emergency_phone,
-                school, start_date, end_date, department, campus, mentor, note,
-                status, access_status, network_status, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                id, name, grade, gender, school, start_date, end_date,
+                department, campus, mentor, note, status, access_status,
+                network_status, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             "legacy-1",
             "Alice",
-            "13800138000",
-            "110101200001010000",
             "G3",
             "F",
-            "13900139000",
             "School A",
             "2026-05-01",
             "2026-08-01",
@@ -167,6 +164,7 @@ class StoragePathTest {
         );
 
         assertEquals(1L, repository.count());
+        assertTrue(columns.contains("employment_status"));
         assertFalse(columns.contains("phone"));
         assertFalse(columns.contains("id_number"));
         assertFalse(columns.contains("emergency_phone"));
@@ -175,6 +173,7 @@ class StoragePathTest {
         assertEquals("Alice", record.name());
         assertEquals("G3", record.grade());
         assertEquals("School A", record.school());
+        assertEquals(EmploymentStatus.ACTIVE, record.employmentStatus());
     }
 
     private static AppProperties appProperties(Path dbPath, Path csvPath) {

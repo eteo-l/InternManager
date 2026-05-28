@@ -13,6 +13,7 @@ public record InternRecord(
     LocalDate endDate,
     String department,
     String campus,
+    EmploymentStatus employmentStatus,
     String mentor,
     String note,
     FormStatus status,

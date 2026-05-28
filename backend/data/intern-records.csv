@@ -1,2 +1,2 @@
-id,name,grade,gender,school,startDate,endDate,department,campus,mentor,note,status,accessStatus,networkStatus,updatedAt
-89b6c347-6e91-4ea3-b345-18e7865e1512,1112,大二,男,1,2026-05-02,2026-05-15,1,中关村壹号,1,,approved,opened,opened,2026-05-14T01:28:45.285086800Z
+id,name,grade,gender,school,startDate,endDate,department,campus,employmentStatus,mentor,note,status,accessStatus,networkStatus,updatedAt
+89b6c347-6e91-4ea3-b345-18e7865e1512,1112,大二,男,1,2026-05-02,2026-05-15,1,中关村壹号,active,1,,approved,opened,opened,2026-05-14T01:28:45.285086800Z

@@ -1,6 +1,7 @@
 package com.example.internmanager.repository;
 
 import com.example.internmanager.config.AppProperties;
+import com.example.internmanager.model.EmploymentStatus;
 import com.example.internmanager.model.FormStatus;
 import com.example.internmanager.model.InternRecord;
 import com.example.internmanager.model.ResourceStatus;
@@ -30,6 +31,7 @@ public class InternRecordRepository {
     private static final String BOOTSTRAP_KEY = "storage_bootstrapped";
     private static final String LEGACY_TABLE_NAME = "intern_records_legacy_migration";
     private static final Set<String> REMOVED_COLUMNS = Set.of("phone", "id_number", "emergency_phone");
+    private static final String DEFAULT_EMPLOYMENT_STATUS = EmploymentStatus.ACTIVE.getValue();
 
     private final JdbcTemplate jdbcTemplate;
     private final AppProperties appProperties;
@@ -50,10 +52,11 @@ public class InternRecordRepository {
     public synchronized List<InternRecord> findAll() {
         return jdbcTemplate.query("""
             SELECT id, name, grade, gender, school,
-                   start_date, end_date, department, campus, mentor, note,
+                   start_date, end_date, department, campus, employment_status, mentor, note,
                    status, access_status, network_status, updated_at
             FROM intern_records
-            ORDER BY updated_at DESC, id DESC
+            ORDER BY CASE WHEN employment_status = 'left' THEN 1 ELSE 0 END,
+                     updated_at DESC, id DESC
             """, this::mapRow);
     }
 
@@ -61,7 +64,7 @@ public class InternRecordRepository {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject("""
                 SELECT id, name, grade, gender, school,
-                       start_date, end_date, department, campus, mentor, note,
+                       start_date, end_date, department, campus, employment_status, mentor, note,
                        status, access_status, network_status, updated_at
                 FROM intern_records
                 WHERE id = ?
@@ -75,9 +78,9 @@ public class InternRecordRepository {
         jdbcTemplate.update("""
             INSERT INTO intern_records (
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, mentor, note,
+                start_date, end_date, department, campus, employment_status, mentor, note,
                 status, access_status, network_status, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 grade = excluded.grade,
@@ -87,6 +90,7 @@ public class InternRecordRepository {
                 end_date = excluded.end_date,
                 department = excluded.department,
                 campus = excluded.campus,
+                employment_status = excluded.employment_status,
                 mentor = excluded.mentor,
                 note = excluded.note,
                 status = excluded.status,
@@ -121,6 +125,7 @@ public class InternRecordRepository {
                 end_date TEXT NOT NULL,
                 department TEXT NOT NULL,
                 campus TEXT NOT NULL,
+                employment_status TEXT NOT NULL,
                 mentor TEXT NOT NULL,
                 note TEXT,
                 status TEXT NOT NULL,
@@ -143,7 +148,7 @@ public class InternRecordRepository {
             (resultSet, rowNum) -> resultSet.getString("name")
         );
 
-        if (columns.stream().noneMatch(REMOVED_COLUMNS::contains)) {
+        if (columns.stream().noneMatch(REMOVED_COLUMNS::contains) && columns.contains("employment_status")) {
             return;
         }
 
@@ -153,18 +158,22 @@ public class InternRecordRepository {
 
         createSchema();
 
+        String employmentStatusExpression = columns.contains("employment_status")
+            ? "employment_status"
+            : "'" + DEFAULT_EMPLOYMENT_STATUS + "'";
+
         jdbcTemplate.update("""
             INSERT INTO intern_records (
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, mentor, note,
+                start_date, end_date, department, campus, employment_status, mentor, note,
                 status, access_status, network_status, updated_at
             )
             SELECT
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, mentor, note,
+                start_date, end_date, department, campus, %s, mentor, note,
                 status, access_status, network_status, updated_at
             FROM intern_records_legacy_migration
-            """);
+            """.formatted(employmentStatusExpression));
         jdbcTemplate.execute("DROP TABLE " + LEGACY_TABLE_NAME);
     }
 
@@ -245,12 +254,34 @@ public class InternRecordRepository {
                 LocalDate.parse(cells.get(9)),
                 cells.get(10),
                 cells.get(11),
+                EmploymentStatus.ACTIVE,
                 cells.get(12),
                 emptyToNull(cells.get(13)),
                 FormStatus.fromValue(cells.get(14)),
                 ResourceStatus.fromValue(cells.get(15)),
                 ResourceStatus.fromValue(cells.get(16)),
                 Instant.parse(cells.get(17))
+            );
+        }
+
+        if (cells.size() >= 16) {
+            return new InternRecord(
+                cells.get(0),
+                cells.get(1),
+                cells.get(2),
+                cells.get(3),
+                cells.get(4),
+                LocalDate.parse(cells.get(5)),
+                LocalDate.parse(cells.get(6)),
+                cells.get(7),
+                cells.get(8),
+                EmploymentStatus.fromValue(cells.get(9)),
+                cells.get(10),
+                emptyToNull(cells.get(11)),
+                FormStatus.fromValue(cells.get(12)),
+                ResourceStatus.fromValue(cells.get(13)),
+                ResourceStatus.fromValue(cells.get(14)),
+                Instant.parse(cells.get(15))
             );
         }
 
@@ -265,6 +296,7 @@ public class InternRecordRepository {
                 LocalDate.parse(cells.get(6)),
                 cells.get(7),
                 cells.get(8),
+                EmploymentStatus.ACTIVE,
                 cells.get(9),
                 emptyToNull(cells.get(10)),
                 FormStatus.fromValue(cells.get(11)),
@@ -290,6 +322,7 @@ public class InternRecordRepository {
             LocalDate.parse("2026-09-30"),
             "极光实验室",
             "中关村壹号",
+            EmploymentStatus.ACTIVE,
             "陈明",
             "下周一到岗，需要申请门禁。",
             FormStatus.PENDING,
@@ -308,6 +341,7 @@ public class InternRecordRepository {
             LocalDate.parse("2026-08-20"),
             "数据平台部",
             "环保园",
+            EmploymentStatus.ACTIVE,
             "王静",
             "已完成设备登记。",
             FormStatus.APPROVED,
@@ -328,6 +362,7 @@ public class InternRecordRepository {
             LocalDate.parse(resultSet.getString("end_date")),
             resultSet.getString("department"),
             resultSet.getString("campus"),
+            EmploymentStatus.fromValue(resultSet.getString("employment_status")),
             resultSet.getString("mentor"),
             emptyToNull(resultSet.getString("note")),
             FormStatus.fromValue(resultSet.getString("status")),
@@ -348,6 +383,7 @@ public class InternRecordRepository {
         preparedStatement.setString(index++, record.endDate().toString());
         preparedStatement.setString(index++, record.department());
         preparedStatement.setString(index++, record.campus());
+        preparedStatement.setString(index++, record.employmentStatus().getValue());
         preparedStatement.setString(index++, record.mentor());
         preparedStatement.setString(index++, record.note());
         preparedStatement.setString(index++, record.status().getValue());

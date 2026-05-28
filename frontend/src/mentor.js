@@ -17,6 +17,10 @@ const resetBtn = document.querySelector("#resetBtn");
 const cancelMentorEditBtn = document.querySelector("#cancelMentorEditBtn");
 const showToast = createToast();
 
+function isLeftEmploymentStatus(status) {
+  return status === "left";
+}
+
 function lockMentorAccess() {
   authShell.hidden = false;
   mentorAccessLayout.classList.remove("authenticated");
@@ -62,6 +66,7 @@ function fillMentorForm(record) {
   mentorForm.elements.status.value = record.status;
   mentorForm.elements.accessStatus.value = record.accessStatus;
   mentorForm.elements.networkStatus.value = record.networkStatus;
+  mentorForm.elements.employmentStatus.value = record.employmentStatus || "active";
 }
 
 function resetMentorForm() {
@@ -100,26 +105,34 @@ function getFilteredRecords() {
   const keyword = searchInput.value.trim().toLowerCase();
   const campus = campusFilter.value;
 
-  return records.filter((record) => {
-    const matchesStatus = activeFilter === "all" || record.status === activeFilter;
-    const matchesCampus = campus === "all" || record.campus === campus;
-    const searchableText = [
-      record.name,
-      record.school,
-      record.grade,
-      record.department,
-      record.campus,
-      record.mentor,
-      record.startDate,
-      record.endDate,
-      record.accessStatus,
-      record.networkStatus
-    ]
-      .join(" ")
-      .toLowerCase();
+  return records
+    .filter((record) => {
+      const matchesStatus = activeFilter === "all" || record.status === activeFilter;
+      const matchesCampus = campus === "all" || record.campus === campus;
+      const searchableText = [
+        record.name,
+        record.school,
+        record.grade,
+        record.department,
+        record.campus,
+        record.mentor,
+        record.startDate,
+        record.endDate,
+        record.accessStatus,
+        record.networkStatus,
+        getEmploymentStatusLabel(record.employmentStatus)
+      ]
+        .join(" ")
+        .toLowerCase();
 
-    return matchesStatus && matchesCampus && searchableText.includes(keyword);
-  });
+      return matchesStatus && matchesCampus && searchableText.includes(keyword);
+    })
+    .map((record, index) => ({ record, index }))
+    .sort((left, right) => {
+      const statusDiff = Number(isLeftEmploymentStatus(left.record.employmentStatus)) - Number(isLeftEmploymentStatus(right.record.employmentStatus));
+      return statusDiff || left.index - right.index;
+    })
+    .map(({ record }) => record);
 }
 
 function renderActionButtons(record) {
@@ -136,12 +149,18 @@ function renderActionButtons(record) {
   `;
 }
 
+function renderEmploymentBadge(record) {
+  const badgeClass = isLeftEmploymentStatus(record.employmentStatus) ? "employment-left" : "employment-active";
+  return `<span class="badge ${badgeClass}">${getEmploymentStatusLabel(record.employmentStatus)}</span>`;
+}
+
 function renderTable() {
   const filteredRecords = getFilteredRecords();
   tableBody.innerHTML = "";
 
   filteredRecords.forEach((record) => {
     const row = document.createElement("tr");
+    row.className = isLeftEmploymentStatus(record.employmentStatus) ? "record-left" : "";
     row.innerHTML = `
       <td class="person-cell">
         <strong>${escapeHtml(record.name)}</strong>
@@ -160,6 +179,7 @@ function renderTable() {
         <span class="subtle">${escapeHtml(record.campus)}</span>
       </td>
       <td>${escapeHtml(record.mentor)}</td>
+      <td>${renderEmploymentBadge(record)}</td>
       <td><span class="badge ${getStatusBadgeClass(record.accessStatus)}">${getResourceStatusLabel(record.accessStatus)}</span></td>
       <td><span class="badge ${getStatusBadgeClass(record.networkStatus)}">${getResourceStatusLabel(record.networkStatus)}</span></td>
       <td><span class="badge ${getStatusBadgeClass(record.status)}">${getFormStatusLabel(record.status)}</span></td>
@@ -222,6 +242,7 @@ async function saveMentorRecord(event) {
         status: mentorForm.elements.status.value,
         accessStatus: mentorForm.elements.accessStatus.value,
         networkStatus: mentorForm.elements.networkStatus.value,
+        employmentStatus: mentorForm.elements.employmentStatus.value,
         intern: data
       })
     });

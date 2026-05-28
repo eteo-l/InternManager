@@ -84,6 +84,7 @@ public class MentorInternController {
             request.status(),
             request.accessStatus(),
             request.networkStatus(),
+            request.employmentStatus(),
             new InternSubmissionPayload(
                 validatedIntern.name(),
                 validatedIntern.grade(),

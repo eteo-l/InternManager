@@ -5,6 +5,7 @@ import com.example.internmanager.dto.InternSubmissionRequest;
 import com.example.internmanager.dto.MentorUpdateRequest;
 import com.example.internmanager.exception.ApiException;
 import com.example.internmanager.model.FormStatus;
+import com.example.internmanager.model.EmploymentStatus;
 import com.example.internmanager.model.InternRecord;
 import com.example.internmanager.model.ResourceStatus;
 import com.example.internmanager.repository.InternRecordRepository;
@@ -38,6 +39,7 @@ public class InternService {
             request.endDate(),
             request.department(),
             request.campus(),
+            EmploymentStatus.ACTIVE,
             request.mentor(),
             request.note(),
             FormStatus.PENDING,
@@ -70,6 +72,7 @@ public class InternService {
             intern.endDate(),
             intern.department(),
             intern.campus(),
+            request.employmentStatus(),
             intern.mentor(),
             intern.note(),
             request.status(),
@@ -94,6 +97,7 @@ public class InternService {
             existing.endDate(),
             existing.department(),
             existing.campus(),
+            existing.employmentStatus(),
             existing.mentor(),
             existing.note(),
             FormStatus.APPROVED,
