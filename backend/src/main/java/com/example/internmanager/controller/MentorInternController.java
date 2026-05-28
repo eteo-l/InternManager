@@ -1,11 +1,10 @@
 package com.example.internmanager.controller;
 
 import com.example.internmanager.dto.InternSubmissionPayload;
-import com.example.internmanager.dto.MessageResponse;
 import com.example.internmanager.dto.InternSubmissionRequest;
+import com.example.internmanager.dto.MessageResponse;
 import com.example.internmanager.dto.MentorUpdateRequest;
 import com.example.internmanager.model.InternRecord;
-import com.example.internmanager.service.ClientTransferCryptoService;
 import com.example.internmanager.service.InternService;
 import com.example.internmanager.service.MentorAuthService;
 import jakarta.servlet.http.HttpSession;
@@ -26,12 +25,10 @@ public class MentorInternController {
 
     private final InternService internService;
     private final MentorAuthService mentorAuthService;
-    private final ClientTransferCryptoService clientTransferCryptoService;
 
-    public MentorInternController(InternService internService, MentorAuthService mentorAuthService, ClientTransferCryptoService clientTransferCryptoService) {
+    public MentorInternController(InternService internService, MentorAuthService mentorAuthService) {
         this.internService = internService;
         this.mentorAuthService = mentorAuthService;
-        this.clientTransferCryptoService = clientTransferCryptoService;
     }
 
     @GetMapping
@@ -43,7 +40,7 @@ public class MentorInternController {
     @PutMapping("/{id}")
     public InternRecord update(@PathVariable String id, @Valid @RequestBody MentorUpdateRequest request, HttpSession session) {
         mentorAuthService.requireAuthenticated(session);
-        return internService.update(id, decryptSensitiveFields(request));
+        return internService.update(id, validateRequest(request));
     }
 
     @PostMapping("/{id}/approve")
@@ -66,15 +63,12 @@ public class MentorInternController {
         return new MessageResponse("已清空所有实习生记录");
     }
 
-    private MentorUpdateRequest decryptSensitiveFields(MentorUpdateRequest request) {
+    private MentorUpdateRequest validateRequest(MentorUpdateRequest request) {
         InternSubmissionPayload payload = request.intern();
         InternSubmissionRequest validatedIntern = new InternSubmissionRequest(
             payload.name(),
-            clientTransferCryptoService.decryptIfNeeded(payload.phone()),
-            clientTransferCryptoService.decryptIfNeeded(payload.idNumber()),
             payload.grade(),
             payload.gender(),
-            clientTransferCryptoService.decryptIfNeeded(payload.emergencyPhone()),
             payload.school(),
             payload.startDate(),
             payload.endDate(),
@@ -92,11 +86,8 @@ public class MentorInternController {
             request.networkStatus(),
             new InternSubmissionPayload(
                 validatedIntern.name(),
-                validatedIntern.phone(),
-                validatedIntern.idNumber(),
                 validatedIntern.grade(),
                 validatedIntern.gender(),
-                validatedIntern.emergencyPhone(),
                 validatedIntern.school(),
                 validatedIntern.startDate(),
                 validatedIntern.endDate(),

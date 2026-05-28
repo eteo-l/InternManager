@@ -18,10 +18,9 @@ async function submitInternRecord(event) {
   }
 
   try {
-    const encryptedData = await encryptSensitiveFieldsForTransport(data);
     await apiFetch("/interns", {
       method: "POST",
-      body: JSON.stringify(encryptedData)
+      body: JSON.stringify(data)
     });
     resetInternForm();
     showToast("实习生信息已提交，等待 Mentor 处理");

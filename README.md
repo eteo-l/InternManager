@@ -13,11 +13,7 @@ backend/data/intern-manager.db
 
 如果首次启动时数据库为空且 `backend/data/intern-records.csv` 存在，会自动导入旧数据。
 
-敏感字段会在后端加密存储：
-
-- `phone`
-- `idNumber`
-- `emergencyPhone`
+当前存储结构不包含身份证号、手机号和紧急联系人手机号。
 
 ## 前端
 
@@ -76,7 +72,6 @@ mvn spring-boot:run
 
 - Mentor 登录 token：`mentor-2026`
 - 后端落盘加密 key
-- 前后端传输加密 key
 - 后端监听地址和端口
 - 前端本地开发代理地址
 

@@ -15,8 +15,6 @@
 - systemd 服务文件：`deploy/systemd/intern-manager-backend.service`
 - 后端基础配置：`backend/src/main/resources/application.yml`
 - 后端生产配置：`backend/src/main/resources/application-prod.yml`
-- 前端传输加密 key：`frontend/app.config.js`
-- 后端传输加密 key：`backend/src/main/java/com/example/internmanager/service/ClientTransferCryptoService.java`
 
 ## 目录建议
 

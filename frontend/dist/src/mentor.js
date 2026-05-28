@@ -17,10 +17,6 @@ const resetBtn = document.querySelector("#resetBtn");
 const cancelMentorEditBtn = document.querySelector("#cancelMentorEditBtn");
 const showToast = createToast();
 
-function isMentorAuthed() {
-  return false;
-}
-
 function lockMentorAccess() {
   authShell.hidden = false;
   mentorAccessLayout.classList.remove("authenticated");
@@ -75,7 +71,6 @@ function resetMentorForm() {
 }
 
 function renderMetrics() {
-  const pending = records.filter((record) => record.status === "pending").length;
   const approved = records.filter((record) => record.status === "approved").length;
   const rejected = records.filter((record) => record.status === "rejected").length;
   const departments = new Set(records.map((record) => record.department).filter(Boolean)).size;
@@ -110,8 +105,6 @@ function getFilteredRecords() {
     const matchesCampus = campus === "all" || record.campus === campus;
     const searchableText = [
       record.name,
-      record.phone,
-      record.idNumber,
       record.school,
       record.grade,
       record.department,
@@ -152,13 +145,8 @@ function renderTable() {
     row.innerHTML = `
       <td class="person-cell">
         <strong>${escapeHtml(record.name)}</strong>
-        <span>${escapeHtml(record.idNumber)}</span>
       </td>
       <td>${escapeHtml(record.gender)}</td>
-      <td>
-        <strong>${escapeHtml(record.phone)}</strong>
-        <span class="subtle">紧急：${escapeHtml(record.emergencyPhone)}</span>
-      </td>
       <td>
         <strong>${escapeHtml(record.school)}</strong>
         <span class="subtle">${escapeHtml(record.grade)}</span>
@@ -228,14 +216,13 @@ async function saveMentorRecord(event) {
   }
 
   try {
-    const encryptedData = await encryptSensitiveFieldsForTransport(data);
     await apiFetch(`/mentor/interns/${id}`, {
       method: "PUT",
       body: JSON.stringify({
         status: mentorForm.elements.status.value,
         accessStatus: mentorForm.elements.accessStatus.value,
         networkStatus: mentorForm.elements.networkStatus.value,
-        intern: encryptedData
+        intern: data
       })
     });
     resetMentorForm();

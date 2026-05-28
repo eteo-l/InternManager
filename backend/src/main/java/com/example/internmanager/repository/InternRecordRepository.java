@@ -4,7 +4,6 @@ import com.example.internmanager.config.AppProperties;
 import com.example.internmanager.model.FormStatus;
 import com.example.internmanager.model.InternRecord;
 import com.example.internmanager.model.ResourceStatus;
-import com.example.internmanager.service.SensitiveFieldCryptoService;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,6 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,30 +28,28 @@ import org.springframework.stereotype.Repository;
 public class InternRecordRepository {
 
     private static final String BOOTSTRAP_KEY = "storage_bootstrapped";
+    private static final String LEGACY_TABLE_NAME = "intern_records_legacy_migration";
+    private static final Set<String> REMOVED_COLUMNS = Set.of("phone", "id_number", "emergency_phone");
 
     private final JdbcTemplate jdbcTemplate;
     private final AppProperties appProperties;
-    private final SensitiveFieldCryptoService sensitiveFieldCryptoService;
 
-    public InternRecordRepository(
-        JdbcTemplate jdbcTemplate,
-        AppProperties appProperties,
-        SensitiveFieldCryptoService sensitiveFieldCryptoService
-    ) {
+    public InternRecordRepository(JdbcTemplate jdbcTemplate, AppProperties appProperties) {
         this.jdbcTemplate = jdbcTemplate;
         this.appProperties = appProperties;
-        this.sensitiveFieldCryptoService = sensitiveFieldCryptoService;
     }
 
     @PostConstruct
     public void initialize() {
         createSchema();
+        migrateLegacySchemaIfNeeded();
+        createIndexes();
         bootstrapIfEmpty();
     }
 
     public synchronized List<InternRecord> findAll() {
         return jdbcTemplate.query("""
-            SELECT id, name, phone, id_number, grade, gender, emergency_phone, school,
+            SELECT id, name, grade, gender, school,
                    start_date, end_date, department, campus, mentor, note,
                    status, access_status, network_status, updated_at
             FROM intern_records
@@ -62,7 +60,7 @@ public class InternRecordRepository {
     public synchronized Optional<InternRecord> findById(String id) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject("""
-                SELECT id, name, phone, id_number, grade, gender, emergency_phone, school,
+                SELECT id, name, grade, gender, school,
                        start_date, end_date, department, campus, mentor, note,
                        status, access_status, network_status, updated_at
                 FROM intern_records
@@ -76,17 +74,14 @@ public class InternRecordRepository {
     public synchronized void save(InternRecord record) {
         jdbcTemplate.update("""
             INSERT INTO intern_records (
-                id, name, phone, id_number, grade, gender, emergency_phone, school,
+                id, name, grade, gender, school,
                 start_date, end_date, department, campus, mentor, note,
                 status, access_status, network_status, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
-                phone = excluded.phone,
-                id_number = excluded.id_number,
                 grade = excluded.grade,
                 gender = excluded.gender,
-                emergency_phone = excluded.emergency_phone,
                 school = excluded.school,
                 start_date = excluded.start_date,
                 end_date = excluded.end_date,
@@ -119,11 +114,8 @@ public class InternRecordRepository {
             CREATE TABLE IF NOT EXISTS intern_records (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                id_number TEXT NOT NULL,
                 grade TEXT NOT NULL,
                 gender TEXT NOT NULL,
-                emergency_phone TEXT NOT NULL,
                 school TEXT NOT NULL,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
@@ -143,6 +135,40 @@ public class InternRecordRepository {
                 value TEXT NOT NULL
             )
             """);
+    }
+
+    private void migrateLegacySchemaIfNeeded() {
+        List<String> columns = jdbcTemplate.query(
+            "PRAGMA table_info(intern_records)",
+            (resultSet, rowNum) -> resultSet.getString("name")
+        );
+
+        if (columns.stream().noneMatch(REMOVED_COLUMNS::contains)) {
+            return;
+        }
+
+        jdbcTemplate.execute("DROP INDEX IF EXISTS idx_intern_records_updated_at");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS " + LEGACY_TABLE_NAME);
+        jdbcTemplate.execute("ALTER TABLE intern_records RENAME TO " + LEGACY_TABLE_NAME);
+
+        createSchema();
+
+        jdbcTemplate.update("""
+            INSERT INTO intern_records (
+                id, name, grade, gender, school,
+                start_date, end_date, department, campus, mentor, note,
+                status, access_status, network_status, updated_at
+            )
+            SELECT
+                id, name, grade, gender, school,
+                start_date, end_date, department, campus, mentor, note,
+                status, access_status, network_status, updated_at
+            FROM intern_records_legacy_migration
+            """);
+        jdbcTemplate.execute("DROP TABLE " + LEGACY_TABLE_NAME);
+    }
+
+    private void createIndexes() {
         jdbcTemplate.execute("""
             CREATE INDEX IF NOT EXISTS idx_intern_records_updated_at
             ON intern_records(updated_at DESC, id DESC)
@@ -187,31 +213,12 @@ public class InternRecordRepository {
                 }
 
                 List<String> cells = parseCsvLine(line);
-                if (cells.size() < 18) {
-                    continue;
-                }
 
                 try {
-                    InternRecord record = new InternRecord(
-                        cells.get(0),
-                        cells.get(1),
-                        sensitiveFieldCryptoService.decrypt(cells.get(2)),
-                        sensitiveFieldCryptoService.decrypt(cells.get(3)),
-                        cells.get(4),
-                        cells.get(5),
-                        sensitiveFieldCryptoService.decrypt(cells.get(6)),
-                        cells.get(7),
-                        LocalDate.parse(cells.get(8)),
-                        LocalDate.parse(cells.get(9)),
-                        cells.get(10),
-                        cells.get(11),
-                        cells.get(12),
-                        emptyToNull(cells.get(13)),
-                        FormStatus.fromValue(cells.get(14)),
-                        ResourceStatus.fromValue(cells.get(15)),
-                        ResourceStatus.fromValue(cells.get(16)),
-                        Instant.parse(cells.get(17))
-                    );
+                    InternRecord record = mapCsvRow(cells);
+                    if (record == null) {
+                        continue;
+                    }
 
                     save(record);
                     imported++;
@@ -226,17 +233,58 @@ public class InternRecordRepository {
         }
     }
 
+    private InternRecord mapCsvRow(List<String> cells) {
+        if (cells.size() >= 18) {
+            return new InternRecord(
+                cells.get(0),
+                cells.get(1),
+                cells.get(4),
+                cells.get(5),
+                cells.get(7),
+                LocalDate.parse(cells.get(8)),
+                LocalDate.parse(cells.get(9)),
+                cells.get(10),
+                cells.get(11),
+                cells.get(12),
+                emptyToNull(cells.get(13)),
+                FormStatus.fromValue(cells.get(14)),
+                ResourceStatus.fromValue(cells.get(15)),
+                ResourceStatus.fromValue(cells.get(16)),
+                Instant.parse(cells.get(17))
+            );
+        }
+
+        if (cells.size() >= 15) {
+            return new InternRecord(
+                cells.get(0),
+                cells.get(1),
+                cells.get(2),
+                cells.get(3),
+                cells.get(4),
+                LocalDate.parse(cells.get(5)),
+                LocalDate.parse(cells.get(6)),
+                cells.get(7),
+                cells.get(8),
+                cells.get(9),
+                emptyToNull(cells.get(10)),
+                FormStatus.fromValue(cells.get(11)),
+                ResourceStatus.fromValue(cells.get(12)),
+                ResourceStatus.fromValue(cells.get(13)),
+                Instant.parse(cells.get(14))
+            );
+        }
+
+        return null;
+    }
+
     private void seedDemoRecords() {
         Instant now = Instant.now();
 
         save(new InternRecord(
             UUID.randomUUID().toString(),
             "林若溪",
-            "13800138001",
-            "310101200201012345",
             "大三",
             "女",
-            "13900139001",
             "上海交通大学",
             LocalDate.parse("2026-06-01"),
             LocalDate.parse("2026-09-30"),
@@ -253,11 +301,8 @@ public class InternRecordRepository {
         save(new InternRecord(
             UUID.randomUUID().toString(),
             "周启航",
-            "13800138002",
-            "110101200103034567",
             "研一",
             "男",
-            "13900139002",
             "浙江大学",
             LocalDate.parse("2026-05-20"),
             LocalDate.parse("2026-08-20"),
@@ -276,11 +321,8 @@ public class InternRecordRepository {
         return new InternRecord(
             resultSet.getString("id"),
             resultSet.getString("name"),
-            sensitiveFieldCryptoService.decrypt(resultSet.getString("phone")),
-            sensitiveFieldCryptoService.decrypt(resultSet.getString("id_number")),
             resultSet.getString("grade"),
             resultSet.getString("gender"),
-            sensitiveFieldCryptoService.decrypt(resultSet.getString("emergency_phone")),
             resultSet.getString("school"),
             LocalDate.parse(resultSet.getString("start_date")),
             LocalDate.parse(resultSet.getString("end_date")),
@@ -299,11 +341,8 @@ public class InternRecordRepository {
         int index = 1;
         preparedStatement.setString(index++, record.id());
         preparedStatement.setString(index++, record.name());
-        preparedStatement.setString(index++, sensitiveFieldCryptoService.encrypt(record.phone()));
-        preparedStatement.setString(index++, sensitiveFieldCryptoService.encrypt(record.idNumber()));
         preparedStatement.setString(index++, record.grade());
         preparedStatement.setString(index++, record.gender());
-        preparedStatement.setString(index++, sensitiveFieldCryptoService.encrypt(record.emergencyPhone()));
         preparedStatement.setString(index++, record.school());
         preparedStatement.setString(index++, record.startDate().toString());
         preparedStatement.setString(index++, record.endDate().toString());

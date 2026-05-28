@@ -6,11 +6,8 @@ import java.time.LocalDate;
 
 public record InternSubmissionPayload(
     @NotBlank String name,
-    @NotBlank String phone,
-    @NotBlank String idNumber,
     @NotBlank String grade,
     @NotBlank String gender,
-    @NotBlank String emergencyPhone,
     @NotBlank String school,
     @NotNull LocalDate startDate,
     @NotNull LocalDate endDate,

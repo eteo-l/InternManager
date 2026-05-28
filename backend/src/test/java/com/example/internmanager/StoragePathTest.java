@@ -2,6 +2,7 @@ package com.example.internmanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.internmanager.config.AppProperties;
@@ -10,7 +11,6 @@ import com.example.internmanager.model.FormStatus;
 import com.example.internmanager.model.InternRecord;
 import com.example.internmanager.model.ResourceStatus;
 import com.example.internmanager.repository.InternRecordRepository;
-import com.example.internmanager.service.SensitiveFieldCryptoService;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,23 +51,17 @@ class StoragePathTest {
         Path csvPath = tempDir.resolve("legacy data & import").resolve("intern-records.csv");
         Files.createDirectories(csvPath.getParent());
 
-        SensitiveFieldCryptoService crypto = new SensitiveFieldCryptoService();
-        crypto.initialize();
-
         String id = UUID.randomUUID().toString();
         String csv = String.join(
             "\n",
-            "id,name,phone,idNumber,grade,gender,emergencyPhone,school,startDate,endDate,department,campus,mentor,note,status,accessStatus,networkStatus,updatedAt",
+            "id,name,grade,gender,school,startDate,endDate,department,campus,mentor,note,status,accessStatus,networkStatus,updatedAt",
             String.join(
                 ",",
                 List.of(
                     id,
                     "Alice",
-                    crypto.encrypt("13800138000"),
-                    crypto.encrypt("110101200001010000"),
                     "G3",
                     "F",
-                    crypto.encrypt("13900139000"),
                     "School A",
                     "2026-05-01",
                     "2026-08-01",
@@ -88,8 +82,7 @@ class StoragePathTest {
         AppProperties properties = appProperties(dbPath, csvPath);
         InternRecordRepository repository = new InternRecordRepository(
             new JdbcTemplate(new SqliteConfig().dataSource(properties)),
-            properties,
-            crypto
+            properties
         );
 
         repository.initialize();
@@ -99,15 +92,89 @@ class StoragePathTest {
 
         InternRecord record = repository.findById(id).orElseThrow();
         assertEquals("Alice", record.name());
-        assertEquals("13800138000", record.phone());
-        assertEquals("110101200001010000", record.idNumber());
-        assertEquals("13900139000", record.emergencyPhone());
+        assertEquals("G3", record.grade());
+        assertEquals("F", record.gender());
+        assertEquals("School A", record.school());
         assertEquals(LocalDate.parse("2026-05-01"), record.startDate());
         assertEquals(LocalDate.parse("2026-08-01"), record.endDate());
         assertEquals("Has note", record.note());
         assertEquals(FormStatus.PENDING, record.status());
         assertEquals(ResourceStatus.OPENED, record.accessStatus());
         assertEquals(ResourceStatus.OPENED, record.networkStatus());
+    }
+
+    @Test
+    void repositoryMigratesLegacyColumnsOutOfExistingDatabase() throws Exception {
+        Path dbPath = tempDir.resolve("db #dir").resolve("intern manager's.db");
+        AppProperties properties = appProperties(dbPath, tempDir.resolve("legacy.csv"));
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(new SqliteConfig().dataSource(properties));
+        jdbcTemplate.execute("""
+            CREATE TABLE intern_records (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                id_number TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                gender TEXT NOT NULL,
+                emergency_phone TEXT NOT NULL,
+                school TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                department TEXT NOT NULL,
+                campus TEXT NOT NULL,
+                mentor TEXT NOT NULL,
+                note TEXT,
+                status TEXT NOT NULL,
+                access_status TEXT NOT NULL,
+                network_status TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+            """);
+        jdbcTemplate.update("""
+            INSERT INTO intern_records (
+                id, name, phone, id_number, grade, gender, emergency_phone,
+                school, start_date, end_date, department, campus, mentor, note,
+                status, access_status, network_status, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            "legacy-1",
+            "Alice",
+            "13800138000",
+            "110101200001010000",
+            "G3",
+            "F",
+            "13900139000",
+            "School A",
+            "2026-05-01",
+            "2026-08-01",
+            "Dept A",
+            "Campus A",
+            "Mentor A",
+            "Note",
+            "pending",
+            "opened",
+            "opened",
+            Instant.parse("2026-05-26T00:00:00Z").toEpochMilli()
+        );
+
+        InternRecordRepository repository = new InternRecordRepository(jdbcTemplate, properties);
+        repository.initialize();
+
+        List<String> columns = jdbcTemplate.query(
+            "PRAGMA table_info(intern_records)",
+            (resultSet, rowNum) -> resultSet.getString("name")
+        );
+
+        assertEquals(1L, repository.count());
+        assertFalse(columns.contains("phone"));
+        assertFalse(columns.contains("id_number"));
+        assertFalse(columns.contains("emergency_phone"));
+
+        InternRecord record = repository.findById("legacy-1").orElseThrow();
+        assertEquals("Alice", record.name());
+        assertEquals("G3", record.grade());
+        assertEquals("School A", record.school());
     }
 
     private static AppProperties appProperties(Path dbPath, Path csvPath) {

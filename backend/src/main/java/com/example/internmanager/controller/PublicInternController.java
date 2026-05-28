@@ -3,7 +3,6 @@ package com.example.internmanager.controller;
 import com.example.internmanager.dto.InternSubmissionPayload;
 import com.example.internmanager.dto.InternSubmissionRequest;
 import com.example.internmanager.model.InternRecord;
-import com.example.internmanager.service.ClientTransferCryptoService;
 import com.example.internmanager.service.InternService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,11 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicInternController {
 
     private final InternService internService;
-    private final ClientTransferCryptoService clientTransferCryptoService;
 
-    public PublicInternController(InternService internService, ClientTransferCryptoService clientTransferCryptoService) {
+    public PublicInternController(InternService internService) {
         this.internService = internService;
-        this.clientTransferCryptoService = clientTransferCryptoService;
     }
 
     @PostMapping
@@ -34,11 +31,8 @@ public class PublicInternController {
     private InternSubmissionRequest toValidatedRequest(InternSubmissionPayload payload) {
         InternSubmissionRequest request = new InternSubmissionRequest(
             payload.name(),
-            clientTransferCryptoService.decryptIfNeeded(payload.phone()),
-            clientTransferCryptoService.decryptIfNeeded(payload.idNumber()),
             payload.grade(),
             payload.gender(),
-            clientTransferCryptoService.decryptIfNeeded(payload.emergencyPhone()),
             payload.school(),
             payload.startDate(),
             payload.endDate(),

@@ -31,11 +31,8 @@ public class InternService {
         InternRecord record = new InternRecord(
             UUID.randomUUID().toString(),
             request.name(),
-            request.phone(),
-            request.idNumber(),
             request.grade(),
             request.gender(),
-            request.emergencyPhone(),
             request.school(),
             request.startDate(),
             request.endDate(),
@@ -54,18 +51,6 @@ public class InternService {
     }
 
     public void validateRequest(InternSubmissionRequest request) {
-        if (!request.phone().matches("^1\\d{10}$")) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "请填写正确的实习生手机号");
-        }
-
-        if (!request.emergencyPhone().matches("^1\\d{10}$")) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "请填写正确的紧急联系人手机号");
-        }
-
-        if (!request.idNumber().matches("^[0-9Xx]{15,18}$")) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "身份证号格式不正确");
-        }
-
         if (request.endDate().isBefore(request.startDate())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "实习结束时间不能早于开始时间");
         }
@@ -78,11 +63,8 @@ public class InternService {
         InternRecord updated = new InternRecord(
             existing.id(),
             intern.name(),
-            intern.phone(),
-            intern.idNumber(),
             intern.grade(),
             intern.gender(),
-            intern.emergencyPhone(),
             intern.school(),
             intern.startDate(),
             intern.endDate(),
@@ -105,11 +87,8 @@ public class InternService {
         InternRecord updated = new InternRecord(
             existing.id(),
             existing.name(),
-            existing.phone(),
-            existing.idNumber(),
             existing.grade(),
             existing.gender(),
-            existing.emergencyPhone(),
             existing.school(),
             existing.startDate(),
             existing.endDate(),
