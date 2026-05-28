@@ -21,6 +21,10 @@ function isLeftEmploymentStatus(status) {
   return status === "left";
 }
 
+function formatTaskTracking(value) {
+  return String(value || "").trim() || "未填写";
+}
+
 function lockMentorAccess() {
   authShell.hidden = false;
   mentorAccessLayout.classList.remove("authenticated");
@@ -67,6 +71,7 @@ function fillMentorForm(record) {
   mentorForm.elements.accessStatus.value = record.accessStatus;
   mentorForm.elements.networkStatus.value = record.networkStatus;
   mentorForm.elements.employmentStatus.value = record.employmentStatus || "active";
+  mentorForm.elements.taskTracking.value = record.taskTracking || "";
 }
 
 function resetMentorForm() {
@@ -120,7 +125,8 @@ function getFilteredRecords() {
         record.endDate,
         record.accessStatus,
         record.networkStatus,
-        getEmploymentStatusLabel(record.employmentStatus)
+        getEmploymentStatusLabel(record.employmentStatus),
+        record.taskTracking
       ]
         .join(" ")
         .toLowerCase();
@@ -180,6 +186,7 @@ function renderTable() {
       </td>
       <td>${escapeHtml(record.mentor)}</td>
       <td>${renderEmploymentBadge(record)}</td>
+      <td class="task-cell">${escapeHtml(formatTaskTracking(record.taskTracking))}</td>
       <td><span class="badge ${getStatusBadgeClass(record.accessStatus)}">${getResourceStatusLabel(record.accessStatus)}</span></td>
       <td><span class="badge ${getStatusBadgeClass(record.networkStatus)}">${getResourceStatusLabel(record.networkStatus)}</span></td>
       <td><span class="badge ${getStatusBadgeClass(record.status)}">${getFormStatusLabel(record.status)}</span></td>
@@ -243,6 +250,7 @@ async function saveMentorRecord(event) {
         accessStatus: mentorForm.elements.accessStatus.value,
         networkStatus: mentorForm.elements.networkStatus.value,
         employmentStatus: mentorForm.elements.employmentStatus.value,
+        taskTracking: mentorForm.elements.taskTracking.value.trim(),
         intern: data
       })
     });

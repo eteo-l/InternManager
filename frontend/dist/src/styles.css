@@ -512,7 +512,7 @@ textarea:focus {
 
 table {
   width: 100%;
-  min-width: 1160px;
+  min-width: 1280px;
   border-collapse: collapse;
 }
 
@@ -555,6 +555,14 @@ tbody tr.record-left:hover {
 .person-cell span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.task-cell {
+  min-width: 220px;
+  max-width: 280px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .badge {

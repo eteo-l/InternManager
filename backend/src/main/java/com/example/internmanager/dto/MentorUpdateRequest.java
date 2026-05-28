@@ -10,6 +10,7 @@ public record MentorUpdateRequest(
     @NotNull ResourceStatus accessStatus,
     @NotNull ResourceStatus networkStatus,
     @NotNull EmploymentStatus employmentStatus,
+    String taskTracking,
     @NotNull InternSubmissionPayload intern
 ) {
 }

@@ -52,7 +52,7 @@ public class InternRecordRepository {
     public synchronized List<InternRecord> findAll() {
         return jdbcTemplate.query("""
             SELECT id, name, grade, gender, school,
-                   start_date, end_date, department, campus, employment_status, mentor, note,
+                   start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                    status, access_status, network_status, updated_at
             FROM intern_records
             ORDER BY CASE WHEN employment_status = 'left' THEN 1 ELSE 0 END,
@@ -64,7 +64,7 @@ public class InternRecordRepository {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject("""
                 SELECT id, name, grade, gender, school,
-                       start_date, end_date, department, campus, employment_status, mentor, note,
+                       start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                        status, access_status, network_status, updated_at
                 FROM intern_records
                 WHERE id = ?
@@ -78,9 +78,9 @@ public class InternRecordRepository {
         jdbcTemplate.update("""
             INSERT INTO intern_records (
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, employment_status, mentor, note,
+                start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                 status, access_status, network_status, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 grade = excluded.grade,
@@ -91,6 +91,7 @@ public class InternRecordRepository {
                 department = excluded.department,
                 campus = excluded.campus,
                 employment_status = excluded.employment_status,
+                task_tracking = excluded.task_tracking,
                 mentor = excluded.mentor,
                 note = excluded.note,
                 status = excluded.status,
@@ -126,6 +127,7 @@ public class InternRecordRepository {
                 department TEXT NOT NULL,
                 campus TEXT NOT NULL,
                 employment_status TEXT NOT NULL,
+                task_tracking TEXT,
                 mentor TEXT NOT NULL,
                 note TEXT,
                 status TEXT NOT NULL,
@@ -148,7 +150,11 @@ public class InternRecordRepository {
             (resultSet, rowNum) -> resultSet.getString("name")
         );
 
-        if (columns.stream().noneMatch(REMOVED_COLUMNS::contains) && columns.contains("employment_status")) {
+        boolean hasRemovedColumns = columns.stream().anyMatch(REMOVED_COLUMNS::contains);
+        boolean hasEmploymentStatus = columns.contains("employment_status");
+        boolean hasTaskTracking = columns.contains("task_tracking");
+
+        if (!hasRemovedColumns && hasEmploymentStatus && hasTaskTracking) {
             return;
         }
 
@@ -158,22 +164,25 @@ public class InternRecordRepository {
 
         createSchema();
 
-        String employmentStatusExpression = columns.contains("employment_status")
+        String employmentStatusExpression = hasEmploymentStatus
             ? "employment_status"
             : "'" + DEFAULT_EMPLOYMENT_STATUS + "'";
+        String taskTrackingExpression = hasTaskTracking
+            ? "task_tracking"
+            : "NULL";
 
         jdbcTemplate.update("""
             INSERT INTO intern_records (
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, employment_status, mentor, note,
+                start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                 status, access_status, network_status, updated_at
             )
             SELECT
                 id, name, grade, gender, school,
-                start_date, end_date, department, campus, %s, mentor, note,
+                start_date, end_date, department, campus, %s, %s, mentor, note,
                 status, access_status, network_status, updated_at
             FROM intern_records_legacy_migration
-            """.formatted(employmentStatusExpression));
+            """.formatted(employmentStatusExpression, taskTrackingExpression));
         jdbcTemplate.execute("DROP TABLE " + LEGACY_TABLE_NAME);
     }
 
@@ -255,12 +264,35 @@ public class InternRecordRepository {
                 cells.get(10),
                 cells.get(11),
                 EmploymentStatus.ACTIVE,
+                null,
                 cells.get(12),
                 emptyToNull(cells.get(13)),
                 FormStatus.fromValue(cells.get(14)),
                 ResourceStatus.fromValue(cells.get(15)),
                 ResourceStatus.fromValue(cells.get(16)),
                 Instant.parse(cells.get(17))
+            );
+        }
+
+        if (cells.size() >= 17) {
+            return new InternRecord(
+                cells.get(0),
+                cells.get(1),
+                cells.get(2),
+                cells.get(3),
+                cells.get(4),
+                LocalDate.parse(cells.get(5)),
+                LocalDate.parse(cells.get(6)),
+                cells.get(7),
+                cells.get(8),
+                EmploymentStatus.fromValue(cells.get(9)),
+                emptyToNull(cells.get(10)),
+                cells.get(11),
+                emptyToNull(cells.get(12)),
+                FormStatus.fromValue(cells.get(13)),
+                ResourceStatus.fromValue(cells.get(14)),
+                ResourceStatus.fromValue(cells.get(15)),
+                Instant.parse(cells.get(16))
             );
         }
 
@@ -276,6 +308,7 @@ public class InternRecordRepository {
                 cells.get(7),
                 cells.get(8),
                 EmploymentStatus.fromValue(cells.get(9)),
+                null,
                 cells.get(10),
                 emptyToNull(cells.get(11)),
                 FormStatus.fromValue(cells.get(12)),
@@ -297,6 +330,7 @@ public class InternRecordRepository {
                 cells.get(7),
                 cells.get(8),
                 EmploymentStatus.ACTIVE,
+                null,
                 cells.get(9),
                 emptyToNull(cells.get(10)),
                 FormStatus.fromValue(cells.get(11)),
@@ -323,6 +357,7 @@ public class InternRecordRepository {
             "极光实验室",
             "中关村壹号",
             EmploymentStatus.ACTIVE,
+            "本周确认入场时间，等待门禁开通。",
             "陈明",
             "下周一到岗，需要申请门禁。",
             FormStatus.PENDING,
@@ -342,6 +377,7 @@ public class InternRecordRepository {
             "数据平台部",
             "环保园",
             EmploymentStatus.ACTIVE,
+            "已完成设备登记，准备安排首次周会任务。",
             "王静",
             "已完成设备登记。",
             FormStatus.APPROVED,
@@ -363,6 +399,7 @@ public class InternRecordRepository {
             resultSet.getString("department"),
             resultSet.getString("campus"),
             EmploymentStatus.fromValue(resultSet.getString("employment_status")),
+            emptyToNull(resultSet.getString("task_tracking")),
             resultSet.getString("mentor"),
             emptyToNull(resultSet.getString("note")),
             FormStatus.fromValue(resultSet.getString("status")),
@@ -384,6 +421,7 @@ public class InternRecordRepository {
         preparedStatement.setString(index++, record.department());
         preparedStatement.setString(index++, record.campus());
         preparedStatement.setString(index++, record.employmentStatus().getValue());
+        preparedStatement.setString(index++, record.taskTracking());
         preparedStatement.setString(index++, record.mentor());
         preparedStatement.setString(index++, record.note());
         preparedStatement.setString(index++, record.status().getValue());

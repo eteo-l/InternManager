@@ -85,6 +85,7 @@ public class MentorInternController {
             request.accessStatus(),
             request.networkStatus(),
             request.employmentStatus(),
+            request.taskTracking(),
             new InternSubmissionPayload(
                 validatedIntern.name(),
                 validatedIntern.grade(),

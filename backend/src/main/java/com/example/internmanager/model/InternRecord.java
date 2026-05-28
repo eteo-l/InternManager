@@ -14,6 +14,7 @@ public record InternRecord(
     String department,
     String campus,
     EmploymentStatus employmentStatus,
+    String taskTracking,
     String mentor,
     String note,
     FormStatus status,

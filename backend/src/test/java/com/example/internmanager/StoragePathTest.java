@@ -3,6 +3,7 @@ package com.example.internmanager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.internmanager.config.AppProperties;
@@ -55,7 +56,7 @@ class StoragePathTest {
         String id = UUID.randomUUID().toString();
         String csv = String.join(
             "\n",
-            "id,name,grade,gender,school,startDate,endDate,department,campus,employmentStatus,mentor,note,status,accessStatus,networkStatus,updatedAt",
+            "id,name,grade,gender,school,startDate,endDate,department,campus,employmentStatus,taskTracking,mentor,note,status,accessStatus,networkStatus,updatedAt",
             String.join(
                 ",",
                 List.of(
@@ -69,6 +70,7 @@ class StoragePathTest {
                     "Dept A",
                     "Campus A",
                     "left",
+                    "Kickoff done",
                     "Mentor A",
                     "Has note",
                     "pending",
@@ -100,6 +102,7 @@ class StoragePathTest {
         assertEquals(LocalDate.parse("2026-05-01"), record.startDate());
         assertEquals(LocalDate.parse("2026-08-01"), record.endDate());
         assertEquals(EmploymentStatus.LEFT, record.employmentStatus());
+        assertEquals("Kickoff done", record.taskTracking());
         assertEquals("Has note", record.note());
         assertEquals(FormStatus.PENDING, record.status());
         assertEquals(ResourceStatus.OPENED, record.accessStatus());
@@ -165,6 +168,7 @@ class StoragePathTest {
 
         assertEquals(1L, repository.count());
         assertTrue(columns.contains("employment_status"));
+        assertTrue(columns.contains("task_tracking"));
         assertFalse(columns.contains("phone"));
         assertFalse(columns.contains("id_number"));
         assertFalse(columns.contains("emergency_phone"));
@@ -174,6 +178,75 @@ class StoragePathTest {
         assertEquals("G3", record.grade());
         assertEquals("School A", record.school());
         assertEquals(EmploymentStatus.ACTIVE, record.employmentStatus());
+        assertNull(record.taskTracking());
+    }
+
+    @Test
+    void repositoryMigratesExistingDatabaseWithoutTaskTrackingColumn() throws Exception {
+        Path dbPath = tempDir.resolve("db #dir").resolve("intern manager's.db");
+        AppProperties properties = appProperties(dbPath, tempDir.resolve("legacy.csv"));
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(new SqliteConfig().dataSource(properties));
+        jdbcTemplate.execute("""
+            CREATE TABLE intern_records (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                gender TEXT NOT NULL,
+                school TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                department TEXT NOT NULL,
+                campus TEXT NOT NULL,
+                employment_status TEXT NOT NULL,
+                mentor TEXT NOT NULL,
+                note TEXT,
+                status TEXT NOT NULL,
+                access_status TEXT NOT NULL,
+                network_status TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+            """);
+        jdbcTemplate.update("""
+            INSERT INTO intern_records (
+                id, name, grade, gender, school, start_date, end_date,
+                department, campus, employment_status, mentor, note, status,
+                access_status, network_status, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            "legacy-2",
+            "Bob",
+            "G2",
+            "M",
+            "School B",
+            "2026-06-01",
+            "2026-08-31",
+            "Dept B",
+            "Campus B",
+            "left",
+            "Mentor B",
+            "Note B",
+            "approved",
+            "opened",
+            "disabled",
+            Instant.parse("2026-05-27T00:00:00Z").toEpochMilli()
+        );
+
+        InternRecordRepository repository = new InternRecordRepository(jdbcTemplate, properties);
+        repository.initialize();
+
+        List<String> columns = jdbcTemplate.query(
+            "PRAGMA table_info(intern_records)",
+            (resultSet, rowNum) -> resultSet.getString("name")
+        );
+
+        assertTrue(columns.contains("employment_status"));
+        assertTrue(columns.contains("task_tracking"));
+
+        InternRecord record = repository.findById("legacy-2").orElseThrow();
+        assertEquals(EmploymentStatus.LEFT, record.employmentStatus());
+        assertNull(record.taskTracking());
+        assertEquals(ResourceStatus.DISABLED, record.networkStatus());
     }
 
     private static AppProperties appProperties(Path dbPath, Path csvPath) {
