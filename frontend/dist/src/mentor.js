@@ -10,6 +10,8 @@ const mentorForm = document.querySelector("#mentorForm");
 const mentorEditor = document.querySelector("#mentorEditor");
 const tableBody = document.querySelector("#internTableBody");
 const emptyState = document.querySelector("#emptyState");
+const emptyStateTitle = document.querySelector("#emptyStateTitle");
+const emptyStateDescription = document.querySelector("#emptyStateDescription");
 const searchInput = document.querySelector("#searchInput");
 const mentorFilter = document.querySelector("#mentorFilter");
 const campusFilter = document.querySelector("#campusFilter");
@@ -182,6 +184,22 @@ function renderEmploymentBadge(record) {
   return `<span class="badge ${badgeClass}">${getEmploymentStatusLabel(record.employmentStatus)}</span>`;
 }
 
+function renderEmptyState(filteredRecords) {
+  if (filteredRecords.length > 0) {
+    emptyState.hidden = true;
+    return;
+  }
+
+  const hasSpecificMentorFilter = mentorFilter.value !== "all";
+  const hasSpecificCampusFilter = campusFilter.value !== "all";
+  const showNoMatchMessage = hasSpecificMentorFilter || hasSpecificCampusFilter;
+
+  emptyState.hidden = false;
+  emptyStateTitle.hidden = !showNoMatchMessage;
+  emptyStateDescription.hidden = showNoMatchMessage;
+  emptyStateDescription.textContent = "实习生提交信息后会显示在这里。";
+}
+
 function renderTable() {
   const filteredRecords = getFilteredRecords();
   tableBody.innerHTML = "";
@@ -217,7 +235,7 @@ function renderTable() {
     tableBody.append(row);
   });
 
-  emptyState.hidden = filteredRecords.length > 0;
+  renderEmptyState(filteredRecords);
 }
 
 function render() {
