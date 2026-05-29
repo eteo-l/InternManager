@@ -300,6 +300,17 @@ h2 {
   gap: 0.875rem;
 }
 
+.token-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.token-action-primary,
+.token-action-secondary {
+  width: 100%;
+}
+
 .mentor-shell {
   display: grid;
   gap: 1.125rem;
@@ -767,6 +778,10 @@ tbody tr.record-left:hover {
     justify-content: center;
     display: inline-flex;
     align-items: center;
+  }
+
+  .token-actions {
+    grid-template-columns: 1fr;
   }
 
   #mentorFilter,
