@@ -23,6 +23,7 @@
 ```text
 /opt/intern-manager/backend
 /var/www/intern-manager/frontend/current
+/etc/intern-manager/intern-manager.env
 ```
 
 其中：
@@ -31,6 +32,7 @@
 - SQLite 数据文件：`/opt/intern-manager/backend/data/intern-manager.db`
 - 旧 CSV 迁移文件：`/opt/intern-manager/backend/data/intern-records.csv`
 - 前端静态资源目录：`/var/www/intern-manager/frontend/current`
+- 后端环境变量文件：`/etc/intern-manager/intern-manager.env`
 
 ## 一次性构建
 
@@ -69,11 +71,34 @@ sudo systemctl enable --now certbot.timer
 
 ```bash
 sudo mkdir -p /opt/intern-manager/backend/data
+sudo mkdir -p /etc/intern-manager
 sudo mkdir -p /var/www/intern-manager/frontend/current
 sudo chown -R www-data:www-data /opt/intern-manager/backend /var/www/intern-manager/frontend
+sudo chown root:root /etc/intern-manager
+sudo chmod 755 /etc/intern-manager
 ```
 
-### 3. 上传产物
+### 3. 配置 Mentor token SHA-256 环境变量
+
+先准备一个新的 Mentor 明文 token，不要把它写进仓库。
+
+计算 SHA-256：
+
+```bash
+printf '%s' 'your-new-mentor-token' | sha256sum
+```
+
+把输出结果的前 64 个十六进制字符写入环境变量文件：
+
+```bash
+sudo tee /etc/intern-manager/intern-manager.env >/dev/null <<'EOF'
+APP_AUTH_MENTOR_TOKEN_SHA256=<sha256-hex>
+EOF
+sudo chmod 600 /etc/intern-manager/intern-manager.env
+sudo chown root:root /etc/intern-manager/intern-manager.env
+```
+
+### 4. 上传产物
 
 上传前端构建产物到：
 
@@ -93,7 +118,7 @@ sudo chown -R www-data:www-data /opt/intern-manager/backend /var/www/intern-mana
 /opt/intern-manager/backend/data/intern-records.csv
 ```
 
-### 4. 安装 systemd 服务
+### 5. 安装 systemd 服务
 
 ```bash
 sudo cp deploy/systemd/intern-manager-backend.service /etc/systemd/system/
@@ -108,8 +133,9 @@ sudo systemctl status intern-manager-backend
 - `WorkingDirectory=/opt/intern-manager/backend`
 - `ExecStart=/usr/bin/java -jar /opt/intern-manager/backend/intern-manager-backend.jar`
 - `SPRING_PROFILES_ACTIVE=prod`
+- `EnvironmentFile=/etc/intern-manager/intern-manager.env`
 
-### 5. 首次签发 Let's Encrypt 证书
+### 6. 首次签发 Let's Encrypt 证书
 
 第一次签发证书前，先安装 bootstrap nginx 配置：
 
@@ -180,5 +206,5 @@ proxy_pass http://127.0.0.1:8080;
 4. `curl -I https://www.casintern.cn`
 5. 浏览器打开 `https://www.casintern.cn/`
 6. 提交一条实习生数据
-7. 使用 `mentor-2026` 登录 Mentor 页面
+7. 使用你自己配置的 Mentor 明文 token 登录 Mentor 页面
 8. 检查 `/opt/intern-manager/backend/data/intern-manager.db` 是否有写入

@@ -11,7 +11,7 @@ server:
 
 app:
   auth:
-    mentor-token-sha256: "bb3ed1e8b5e7846078aba5450c85b91150f23f2870feabd9ac7eccdfe83fa357"
+    mentor-token-sha256: "${APP_AUTH_MENTOR_TOKEN_SHA256:}"
   storage:
     db-path: "data/intern-manager.db"
     legacy-csv-path: "data/intern-records.csv"

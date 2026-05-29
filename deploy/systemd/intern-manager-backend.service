@@ -7,6 +7,7 @@ Type=simple
 User=www-data
 Group=www-data
 Environment=SPRING_PROFILES_ACTIVE=prod
+EnvironmentFile=/etc/intern-manager/intern-manager.env
 WorkingDirectory=/opt/intern-manager/backend
 ExecStart=/usr/bin/java -jar /opt/intern-manager/backend/intern-manager-backend.jar
 SuccessExitStatus=143

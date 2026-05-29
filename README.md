@@ -52,8 +52,19 @@ http://127.0.0.1:8080
 
 ```bash
 cd backend
+export APP_AUTH_MENTOR_TOKEN_SHA256="<sha256-hex>"
 mvn spring-boot:run
 ```
+
+PowerShell:
+
+```powershell
+cd backend
+$env:APP_AUTH_MENTOR_TOKEN_SHA256 = "<sha256-hex>"
+mvn spring-boot:run
+```
+
+`APP_AUTH_MENTOR_TOKEN_SHA256` 必填，值为 Mentor 登录 token 的 SHA-256 十六进制小写字符串。
 
 ## 接口职责
 
@@ -66,16 +77,35 @@ mvn spring-boot:run
 - Mentor 打回删除：`DELETE /api/mentor/interns/{id}`
 - Mentor 清空：`DELETE /api/mentor/interns`
 
-## 固定配置
+## 配置说明
 
-为了降低部署难度，当前项目已经把这些值直接写死在代码里：
+当前项目要求通过环境变量提供 Mentor 登录 token 的 SHA-256：
 
-- Mentor 登录 token：`mentor-2026`
-- 后端落盘加密 key
-- 后端监听地址和端口
-- 前端本地开发代理地址
+```text
+APP_AUTH_MENTOR_TOKEN_SHA256
+```
 
-如果后续需要修改这些值，请同步更新对应源码文件。
+建议流程：
+
+1. 先确定一个新的 Mentor 明文 token。
+2. 在本地或服务器上把这个明文 token 计算为 SHA-256。
+3. 只把 SHA-256 结果写入环境变量，不把明文 token 写进仓库或配置文件。
+
+Linux/macOS:
+
+```bash
+printf '%s' 'your-new-mentor-token' | sha256sum
+```
+
+PowerShell:
+
+```powershell
+$bytes = [System.Text.Encoding]::UTF8.GetBytes('your-new-mentor-token')
+$hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+-join ($hash | ForEach-Object { $_.ToString('x2') })
+```
+
+后端监听地址、端口和前端本地开发地址仍在源码配置文件中维护。
 
 ## 部署
 
