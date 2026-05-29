@@ -45,7 +45,7 @@ function closeReceipt() {
   internForm.hidden = false;
   internFormHeading.hidden = false;
   resetInternForm();
-  internForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.location.href = "./index.html";
 }
 
 async function submitInternRecord(event) {

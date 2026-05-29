@@ -309,6 +309,10 @@ h2 {
 .token-action-primary,
 .token-action-secondary {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .mentor-shell {
