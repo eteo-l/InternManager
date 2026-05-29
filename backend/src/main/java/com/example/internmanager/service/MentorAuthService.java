@@ -51,7 +51,8 @@ public class MentorAuthService {
     }
 
     private String normalizeToken(String rawToken) {
-        return rawToken == null ? "" : rawToken.trim();
+        String normalized = rawToken == null ? "" : rawToken.trim();
+        return normalized.length() > 16 ? normalized.substring(0, 16) : normalized;
     }
 
     private byte[] sha256(String value) {

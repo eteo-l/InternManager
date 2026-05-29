@@ -211,6 +211,10 @@ h2 {
   gap: 1rem;
 }
 
+.submission-receipt[hidden] {
+  display: none;
+}
+
 .receipt-heading {
   border-bottom: 0;
 }
