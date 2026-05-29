@@ -9,13 +9,31 @@ public class AppProperties {
 
     private final Storage storage = new Storage();
     private final Cors cors = new Cors();
+    private final Auth auth = new Auth();
 
     public Cors getCors() {
         return cors;
     }
 
+    public Auth getAuth() {
+        return auth;
+    }
+
     public Storage getStorage() {
         return storage;
+    }
+
+    public static class Auth {
+
+        private String mentorTokenSha256;
+
+        public String getMentorTokenSha256() {
+            return mentorTokenSha256;
+        }
+
+        public void setMentorTokenSha256(String mentorTokenSha256) {
+            this.mentorTokenSha256 = mentorTokenSha256;
+        }
     }
 
     public static class Cors {
