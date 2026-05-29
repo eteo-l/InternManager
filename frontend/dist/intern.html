@@ -35,7 +35,7 @@
       </section>
 
       <section class="intern-form-shell">
-        <div class="section-heading">
+        <div class="section-heading" id="internFormHeading">
           <div>
             <p class="eyebrow">Intern Form</p>
             <h2>个人信息表</h2>
@@ -115,6 +115,23 @@
             <button class="primary-button" type="submit">提交信息</button>
           </div>
         </form>
+
+        <section class="submission-receipt" id="submissionReceipt" hidden aria-labelledby="receiptTitle">
+          <div class="section-heading receipt-heading">
+            <div>
+              <p class="eyebrow">Submission Receipt</p>
+              <h2 id="receiptTitle">提交成功</h2>
+            </div>
+          </div>
+
+          <div class="receipt-body">
+            <p class="receipt-message">你的实习信息已提交，以下是本次提交内容。</p>
+            <div class="receipt-list" id="submissionReceiptList"></div>
+            <div class="form-actions receipt-actions">
+              <button class="primary-button" id="closeReceiptBtn" type="button">关闭</button>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
 
