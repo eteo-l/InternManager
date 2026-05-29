@@ -8,7 +8,7 @@ public record InternSubmissionPayload(
     @NotBlank String name,
     @NotBlank String grade,
     @NotBlank String gender,
-    @NotBlank String school,
+    @NotBlank String major,
     @NotNull LocalDate startDate,
     @NotNull LocalDate endDate,
     @NotBlank String department,

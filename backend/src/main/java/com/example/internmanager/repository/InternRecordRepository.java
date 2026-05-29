@@ -51,7 +51,7 @@ public class InternRecordRepository {
 
     public synchronized List<InternRecord> findAll() {
         return jdbcTemplate.query("""
-            SELECT id, name, grade, gender, school,
+            SELECT id, name, grade, gender, major,
                    start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                    status, access_status, network_status, updated_at
             FROM intern_records
@@ -63,7 +63,7 @@ public class InternRecordRepository {
     public synchronized Optional<InternRecord> findById(String id) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject("""
-                SELECT id, name, grade, gender, school,
+                SELECT id, name, grade, gender, major,
                        start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                        status, access_status, network_status, updated_at
                 FROM intern_records
@@ -77,7 +77,7 @@ public class InternRecordRepository {
     public synchronized void save(InternRecord record) {
         jdbcTemplate.update("""
             INSERT INTO intern_records (
-                id, name, grade, gender, school,
+                id, name, grade, gender, major,
                 start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                 status, access_status, network_status, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -85,7 +85,7 @@ public class InternRecordRepository {
                 name = excluded.name,
                 grade = excluded.grade,
                 gender = excluded.gender,
-                school = excluded.school,
+                major = excluded.major,
                 start_date = excluded.start_date,
                 end_date = excluded.end_date,
                 department = excluded.department,
@@ -121,7 +121,7 @@ public class InternRecordRepository {
                 name TEXT NOT NULL,
                 grade TEXT NOT NULL,
                 gender TEXT NOT NULL,
-                school TEXT NOT NULL,
+                major TEXT NOT NULL,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
                 department TEXT NOT NULL,
@@ -153,8 +153,9 @@ public class InternRecordRepository {
         boolean hasRemovedColumns = columns.stream().anyMatch(REMOVED_COLUMNS::contains);
         boolean hasEmploymentStatus = columns.contains("employment_status");
         boolean hasTaskTracking = columns.contains("task_tracking");
+        boolean hasMajor = columns.contains("major");
 
-        if (!hasRemovedColumns && hasEmploymentStatus && hasTaskTracking) {
+        if (!hasRemovedColumns && hasEmploymentStatus && hasTaskTracking && hasMajor) {
             return;
         }
 
@@ -170,19 +171,22 @@ public class InternRecordRepository {
         String taskTrackingExpression = hasTaskTracking
             ? "task_tracking"
             : "NULL";
+        String majorExpression = hasMajor
+            ? "major"
+            : "school";
 
         jdbcTemplate.update("""
             INSERT INTO intern_records (
-                id, name, grade, gender, school,
+                id, name, grade, gender, major,
                 start_date, end_date, department, campus, employment_status, task_tracking, mentor, note,
                 status, access_status, network_status, updated_at
             )
             SELECT
-                id, name, grade, gender, school,
+                id, name, grade, gender, %s,
                 start_date, end_date, department, campus, %s, %s, mentor, note,
                 status, access_status, network_status, updated_at
             FROM intern_records_legacy_migration
-            """.formatted(employmentStatusExpression, taskTrackingExpression));
+            """.formatted(majorExpression, employmentStatusExpression, taskTrackingExpression));
         jdbcTemplate.execute("DROP TABLE " + LEGACY_TABLE_NAME);
     }
 
@@ -254,11 +258,11 @@ public class InternRecordRepository {
     private InternRecord mapCsvRow(List<String> cells) {
         if (cells.size() >= 18) {
             return new InternRecord(
-                cells.get(0),
-                cells.get(1),
-                cells.get(4),
-                cells.get(5),
-                cells.get(7),
+            cells.get(0),
+            cells.get(1),
+            cells.get(4),
+            cells.get(5),
+            cells.get(7),
                 LocalDate.parse(cells.get(8)),
                 LocalDate.parse(cells.get(9)),
                 cells.get(10),
@@ -393,7 +397,7 @@ public class InternRecordRepository {
             resultSet.getString("name"),
             resultSet.getString("grade"),
             resultSet.getString("gender"),
-            resultSet.getString("school"),
+            resultSet.getString("major"),
             LocalDate.parse(resultSet.getString("start_date")),
             LocalDate.parse(resultSet.getString("end_date")),
             resultSet.getString("department"),
@@ -415,7 +419,7 @@ public class InternRecordRepository {
         preparedStatement.setString(index++, record.name());
         preparedStatement.setString(index++, record.grade());
         preparedStatement.setString(index++, record.gender());
-        preparedStatement.setString(index++, record.school());
+        preparedStatement.setString(index++, record.major());
         preparedStatement.setString(index++, record.startDate().toString());
         preparedStatement.setString(index++, record.endDate().toString());
         preparedStatement.setString(index++, record.department());

@@ -56,7 +56,7 @@ class StoragePathTest {
         String id = UUID.randomUUID().toString();
         String csv = String.join(
             "\n",
-            "id,name,grade,gender,school,startDate,endDate,department,campus,employmentStatus,taskTracking,mentor,note,status,accessStatus,networkStatus,updatedAt",
+            "id,name,grade,gender,major,startDate,endDate,department,campus,employmentStatus,taskTracking,mentor,note,status,accessStatus,networkStatus,updatedAt",
             String.join(
                 ",",
                 List.of(
@@ -98,7 +98,7 @@ class StoragePathTest {
         assertEquals("Alice", record.name());
         assertEquals("G3", record.grade());
         assertEquals("F", record.gender());
-        assertEquals("School A", record.school());
+        assertEquals("School A", record.major());
         assertEquals(LocalDate.parse("2026-05-01"), record.startDate());
         assertEquals(LocalDate.parse("2026-08-01"), record.endDate());
         assertEquals(EmploymentStatus.LEFT, record.employmentStatus());
@@ -167,6 +167,8 @@ class StoragePathTest {
         );
 
         assertEquals(1L, repository.count());
+        assertTrue(columns.contains("major"));
+        assertFalse(columns.contains("school"));
         assertTrue(columns.contains("employment_status"));
         assertTrue(columns.contains("task_tracking"));
         assertFalse(columns.contains("phone"));
@@ -176,7 +178,7 @@ class StoragePathTest {
         InternRecord record = repository.findById("legacy-1").orElseThrow();
         assertEquals("Alice", record.name());
         assertEquals("G3", record.grade());
-        assertEquals("School A", record.school());
+        assertEquals("School A", record.major());
         assertEquals(EmploymentStatus.ACTIVE, record.employmentStatus());
         assertNull(record.taskTracking());
     }
@@ -240,6 +242,8 @@ class StoragePathTest {
             (resultSet, rowNum) -> resultSet.getString("name")
         );
 
+        assertTrue(columns.contains("major"));
+        assertFalse(columns.contains("school"));
         assertTrue(columns.contains("employment_status"));
         assertTrue(columns.contains("task_tracking"));
 

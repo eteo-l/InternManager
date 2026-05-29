@@ -33,7 +33,7 @@ public class PublicInternController {
             payload.name(),
             payload.grade(),
             payload.gender(),
-            payload.school(),
+            payload.major(),
             payload.startDate(),
             payload.endDate(),
             payload.department(),

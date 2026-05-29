@@ -604,7 +604,7 @@ td {
 th {
   position: sticky;
   top: 0;
-  background: #f3f7f4;
+  background: var(--panel);
   color: var(--muted);
   font-size: 0.75rem;
   z-index: 1;

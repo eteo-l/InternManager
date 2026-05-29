@@ -138,7 +138,7 @@ function getFilteredRecords() {
       const matchesCampus = campus === "all" || record.campus === campus;
       const searchableText = [
         record.name,
-        record.school,
+        record.major,
         record.grade,
         record.department,
         record.campus,
@@ -195,7 +195,7 @@ function renderTable() {
       </td>
       <td>${escapeHtml(record.gender)}</td>
       <td>
-        <strong>${escapeHtml(record.school)}</strong>
+        <strong>${escapeHtml(record.major)}</strong>
         <span class="subtle">${escapeHtml(record.grade)}</span>
       </td>
       <td>

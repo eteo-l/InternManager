@@ -16,7 +16,7 @@ const internFields = [
   "name",
   "grade",
   "gender",
-  "school",
+  "major",
   "startDate",
   "endDate",
   "department",

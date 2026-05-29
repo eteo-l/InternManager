@@ -15,7 +15,7 @@ function renderReceipt(data) {
     ["姓名", data.name],
     ["年级", data.grade],
     ["性别", data.gender],
-    ["学校", data.school],
+    ["专业", data.major],
     ["开始时间", data.startDate],
     ["结束时间", data.endDate],
     ["部门", data.department],

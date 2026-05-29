@@ -8,7 +8,7 @@ public record InternRecord(
     String name,
     String grade,
     String gender,
-    String school,
+    String major,
     LocalDate startDate,
     LocalDate endDate,
     String department,
